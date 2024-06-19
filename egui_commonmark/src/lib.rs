@@ -187,6 +187,11 @@ impl CommonMarkViewer {
         self
     }
 
+    pub fn selectable(mut self, selectable: bool) -> Self {
+        self.options.selectable = selectable;
+        self
+    }
+
     /// Shows rendered markdown
     pub fn show(
         self,

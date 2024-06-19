@@ -33,6 +33,7 @@ pub struct CommonMarkOptions {
     pub alerts: AlertBundle,
     /// Whether to present a mutable ui for things like checkboxes
     pub mutable: bool,
+    pub selectable: bool,
 }
 
 impl Default for CommonMarkOptions {
@@ -50,6 +51,7 @@ impl Default for CommonMarkOptions {
             default_implicit_uri_scheme: "file://".to_owned(),
             alerts: AlertBundle::gfm(),
             mutable: false,
+            selectable: false,
         }
     }
 }
