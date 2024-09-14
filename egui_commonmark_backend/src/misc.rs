@@ -343,6 +343,7 @@ impl CodeBlock {
 fn simple_highlighting(ui: &Ui, text: &str, extension: &str) -> egui::text::LayoutJob {
     egui_extras::syntax_highlighting::highlight(
         ui.ctx(),
+        &egui::Style::default(),
         &egui_extras::syntax_highlighting::CodeTheme::from_style(ui.style()),
         text,
         extension,
