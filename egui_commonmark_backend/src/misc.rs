@@ -2,7 +2,6 @@ use crate::alerts::AlertBundle;
 use egui::{text::LayoutJob, RichText, TextStyle, Ui};
 use std::collections::HashMap;
 
-#[cfg(feature = "pulldown-cmark")]
 use crate::pulldown::ScrollableCache;
 
 #[cfg(feature = "better_syntax_highlighting")]
@@ -232,12 +231,12 @@ impl Image {
     }
 }
 
-pub struct FencedCodeBlock {
-    pub lang: String,
+pub struct CodeBlock {
+    pub lang: Option<String>,
     pub content: String,
 }
 
-impl FencedCodeBlock {
+impl CodeBlock {
     pub fn end(
         &self,
         ui: &mut Ui,
@@ -249,7 +248,12 @@ impl FencedCodeBlock {
             Self::pre_syntax_highlighting(cache, options, ui);
 
             let mut layout = |ui: &Ui, string: &str, wrap_width: f32| {
-                let mut job = self.syntax_highlighting(cache, options, &self.lang, ui, string);
+                let mut job = if let Some(lang) = &self.lang {
+                    self.syntax_highlighting(cache, options, lang, ui, string)
+                } else {
+                    plain_highlighting(ui, string)
+                };
+
                 job.wrap.max_width = wrap_width;
                 ui.fonts(|f| f.layout_job(job))
             };
@@ -260,7 +264,7 @@ impl FencedCodeBlock {
 }
 
 #[cfg(not(feature = "better_syntax_highlighting"))]
-impl FencedCodeBlock {
+impl CodeBlock {
     fn pre_syntax_highlighting(
         _cache: &mut CommonMarkCache,
         _options: &CommonMarkOptions,
@@ -277,12 +281,12 @@ impl FencedCodeBlock {
         ui: &Ui,
         text: &str,
     ) -> egui::text::LayoutJob {
-        plain_highlighting(ui, text, extension)
+        simple_highlighting(ui, text, extension)
     }
 }
 
 #[cfg(feature = "better_syntax_highlighting")]
-impl FencedCodeBlock {
+impl CodeBlock {
     fn pre_syntax_highlighting(
         cache: &mut CommonMarkCache,
         options: &CommonMarkOptions,
@@ -331,18 +335,31 @@ impl FencedCodeBlock {
 
             job
         } else {
-            plain_highlighting(ui, text, extension)
+            simple_highlighting(ui, text, extension)
         }
     }
 }
 
-fn plain_highlighting(ui: &Ui, text: &str, extension: &str) -> egui::text::LayoutJob {
+fn simple_highlighting(ui: &Ui, text: &str, extension: &str) -> egui::text::LayoutJob {
     egui_extras::syntax_highlighting::highlight(
         ui.ctx(),
         &egui_extras::syntax_highlighting::CodeTheme::from_style(ui.style()),
         text,
         extension,
     )
+}
+
+fn plain_highlighting(ui: &Ui, text: &str) -> egui::text::LayoutJob {
+    let mut job = egui::text::LayoutJob::default();
+    job.append(
+        text,
+        0.0,
+        egui::TextFormat::simple(
+            TextStyle::Monospace.resolve(ui.style()),
+            ui.style().visuals.text_color(),
+        ),
+    );
+    job
 }
 
 #[cfg(feature = "better_syntax_highlighting")]
@@ -372,7 +389,6 @@ pub struct CommonMarkCache {
 
     link_hooks: HashMap<String, bool>,
 
-    #[cfg(feature = "pulldown-cmark")]
     scroll: HashMap<egui::Id, ScrollableCache>,
     pub(self) has_installed_loaders: bool,
 }
@@ -386,7 +402,6 @@ impl Default for CommonMarkCache {
             #[cfg(feature = "better_syntax_highlighting")]
             ts: ThemeSet::load_defaults(),
             link_hooks: HashMap::new(),
-            #[cfg(feature = "pulldown-cmark")]
             scroll: Default::default(),
             has_installed_loaders: false,
         }
@@ -436,14 +451,12 @@ impl CommonMarkCache {
     }
 
     /// Clear the cache for all scrollable elements
-    #[cfg(feature = "pulldown-cmark")]
     pub fn clear_scrollable(&mut self) {
         self.scroll.clear();
     }
 
     /// Clear the cache for a specific scrollable viewer. Returns false if the
     /// id was not in the cache.
-    #[cfg(feature = "pulldown-cmark")]
     pub fn clear_scrollable_with_id(&mut self, source_id: impl std::hash::Hash) -> bool {
         self.scroll.remove(&egui::Id::new(source_id)).is_some()
     }
@@ -515,7 +528,6 @@ impl CommonMarkCache {
     }
 }
 
-#[cfg(feature = "pulldown-cmark")]
 pub fn scroll_cache<'a>(cache: &'a mut CommonMarkCache, id: &egui::Id) -> &'a mut ScrollableCache {
     if !cache.scroll.contains_key(id) {
         cache.scroll.insert(*id, Default::default());

@@ -1,5 +1,27 @@
 # egui_commomnark changelog
 
+## Unreleased
+
+### Added
+
+- Definition lists
+- Proper inline code block rendering
+
+### Changed
+
+- `CommonMarkViewer::new` no longer takes in an id.
+- `commonmark!` and `commonmark_str!` no longer takes in an id.
+- `CommonMarkViewer::show_scrollable` takes in an id explicity.
+
+- Updated pulldown-cmark to 0.12
+- Newlines are no longer inserted before/after markdown ([#56](https://github.com/lampsitter/egui_commonmark/pull/56))
+    > For the old behaviour you can call `ui.label("");` before and and after
+
+### Removed
+
+- Experimental comrak backend ([#57](https://github.com/lampsitter/egui_commonmark/pull/57))
+- Deprecated method `syntax_theme`
+
 ## 0.17.0 - 2024-07-03
 
 ### Changed

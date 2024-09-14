@@ -15,7 +15,7 @@ struct App {
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         let mut text = r#"# Commonmark Viewer Example
-        This is a fairly large markdown file showcasing scroll.
+This is a fairly large markdown file showcasing scroll.
                     "#
         .to_string();
 
@@ -35,24 +35,19 @@ vec.push(5);
         text += &repeating.repeat(1024);
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            CommonMarkViewer::new("viewer")
+            CommonMarkViewer::new()
                 .max_image_width(Some(512))
-                .show_scrollable(ui, &mut self.cache, &text);
+                .show_scrollable("viewer", ui, &mut self.cache, &text);
         });
     }
 }
-
-#[cfg(feature = "comrak")]
-const BACKEND: &str = "comrak";
-#[cfg(feature = "pulldown_cmark")]
-const BACKEND: &str = "pulldown_cmark";
 
 fn main() -> eframe::Result {
     let mut args = std::env::args();
     args.next();
 
     eframe::run_native(
-        &format!("Markdown viewer (backend '{}')", BACKEND),
+        "Markdown viewer",
         eframe::NativeOptions::default(),
         Box::new(move |cc| {
             if let Some(theme) = args.next() {

@@ -28,23 +28,18 @@ Notice how the destination is not shown on [hover](#prev) unlike with [urls](htt
 
         egui::CentralPanel::default().show(ctx, |ui| {
             egui::ScrollArea::vertical().show(ui, |ui| {
-                CommonMarkViewer::new("viewer").show(ui, &mut self.cache, p[self.curr_page]);
+                CommonMarkViewer::new().show(ui, &mut self.cache, p[self.curr_page]);
             });
         });
     }
 }
-
-#[cfg(feature = "comrak")]
-const BACKEND: &str = "comrak";
-#[cfg(feature = "pulldown_cmark")]
-const BACKEND: &str = "pulldown_cmark";
 
 fn main() -> eframe::Result {
     let mut args = std::env::args();
     args.next();
 
     eframe::run_native(
-        &format!("Markdown viewer link hooks (backend '{}')", BACKEND),
+        "Markdown viewer link hooks",
         eframe::NativeOptions::default(),
         Box::new(move |cc| {
             if let Some(theme) = args.next() {

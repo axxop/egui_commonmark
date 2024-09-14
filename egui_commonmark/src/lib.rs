@@ -14,7 +14,7 @@
 //!
 //! # __run_test_ui(|ui| {
 //! let mut cache = CommonMarkCache::default();
-//! CommonMarkViewer::new("viewer").show(ui, &mut cache, markdown);
+//! CommonMarkViewer::new().show(ui, &mut cache, markdown);
 //! # });
 //!
 //! ```
@@ -47,7 +47,7 @@
 //! use egui_commonmark::{CommonMarkCache, commonmark};
 //! # egui::__run_test_ui(|ui| {
 //! let mut cache = CommonMarkCache::default();
-//! let _response = commonmark!("example", ui, &mut cache, "# ATX Heading Level 1");
+//! let _response = commonmark!(ui, &mut cache, "# ATX Heading Level 1");
 //! # });
 //! ```
 //!
@@ -60,7 +60,7 @@
 //! use egui_commonmark::{CommonMarkCache, commonmark_str};
 //! # egui::__run_test_ui(|ui| {
 //! let mut cache = CommonMarkCache::default();
-//! commonmark_str!("example_file", ui, &mut cache, "content.md");
+//! commonmark_str!(ui, &mut cache, "content.md");
 //! # });
 //! ```
 //!
@@ -76,12 +76,6 @@ mod parsers;
 pub use egui_commonmark_backend::alerts::{Alert, AlertBundle};
 pub use egui_commonmark_backend::misc::CommonMarkCache;
 
-#[cfg(all(feature = "comrak", feature = "pulldown_cmark"))]
-compile_error!("Cannot have multiple different parsing backends enabled at the same time");
-
-#[cfg(not(any(feature = "comrak", feature = "pulldown_cmark")))]
-compile_error!("Either the pulldown_cmark or comrak backend must be enabled");
-
 #[cfg(feature = "macros")]
 pub use egui_commonmark_macros::*;
 
@@ -92,18 +86,14 @@ pub use egui_commonmark_backend;
 
 use egui_commonmark_backend::*;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct CommonMarkViewer {
-    source_id: Id,
     options: CommonMarkOptions,
 }
 
 impl CommonMarkViewer {
-    pub fn new(source_id: impl std::hash::Hash) -> Self {
-        Self {
-            source_id: Id::new(source_id),
-            options: CommonMarkOptions::default(),
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 
     /// The amount of spaces a bullet point is indented. By default this is 4
@@ -139,7 +129,7 @@ impl CommonMarkViewer {
     /// # Example
     /// ```
     /// # use egui_commonmark::CommonMarkViewer;
-    /// CommonMarkViewer::new("viewer").default_implicit_uri_scheme("https://example.org/");
+    /// CommonMarkViewer::new().default_implicit_uri_scheme("https://example.org/");
     /// ```
     pub fn default_implicit_uri_scheme<S: Into<String>>(mut self, scheme: S) -> Self {
         self.options.default_implicit_uri_scheme = scheme.into();
@@ -152,14 +142,6 @@ impl CommonMarkViewer {
     /// this to `true`
     pub fn explicit_image_uri_scheme(mut self, use_explicit: bool) -> Self {
         self.options.use_explicit_uri_scheme = use_explicit;
-        self
-    }
-
-    #[cfg(feature = "better_syntax_highlighting")]
-    #[deprecated(note = "use `syntax_theme_light` or `syntax_theme_dark` instead")]
-    pub fn syntax_theme(mut self, theme: String) -> Self {
-        self.options.theme_light = theme.clone();
-        self.options.theme_dark = theme;
         self
     }
 
@@ -177,7 +159,6 @@ impl CommonMarkViewer {
         self
     }
 
-    #[cfg(not(feature = "comrak"))] // not supported by the backend atm.
     /// Specify what kind of alerts are supported. This can also be used to localize alerts.
     ///
     /// By default [github flavoured markdown style alerts](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#alerts)
@@ -201,21 +182,12 @@ impl CommonMarkViewer {
     ) -> egui::InnerResponse<()> {
         egui_commonmark_backend::prepare_show(cache, ui.ctx());
 
-        #[cfg(feature = "pulldown_cmark")]
-        let (response, _) = parsers::pulldown::CommonMarkViewerInternal::new(self.source_id).show(
+        let (response, _) = parsers::pulldown::CommonMarkViewerInternal::new().show(
             ui,
             cache,
             &self.options,
             text,
-            false,
-        );
-
-        #[cfg(feature = "comrak")]
-        let response = parsers::comrak::CommonMarkViewerInternal::new(self.source_id).show(
-            ui,
-            cache,
-            &self.options,
-            text,
+            None,
         );
 
         response
@@ -224,7 +196,6 @@ impl CommonMarkViewer {
     /// Shows rendered markdown, and allows the rendered ui to mutate the source text.
     ///
     /// The only currently implemented mutation is allowing checkboxes to be toggled through the ui.
-    #[cfg(feature = "pulldown_cmark")]
     pub fn show_mut(
         mut self,
         ui: &mut egui::Ui,
@@ -234,10 +205,13 @@ impl CommonMarkViewer {
         self.options.mutable = true;
         egui_commonmark_backend::prepare_show(cache, ui.ctx());
 
-        let (response, checkmark_events) = parsers::pulldown::CommonMarkViewerInternal::new(
-            self.source_id,
-        )
-        .show(ui, cache, &self.options, text, false);
+        let (response, checkmark_events) = parsers::pulldown::CommonMarkViewerInternal::new().show(
+            ui,
+            cache,
+            &self.options,
+            text,
+            None,
+        );
 
         // Update source text for checkmarks that were clicked
         for ev in checkmark_events {
@@ -266,9 +240,16 @@ impl CommonMarkViewer {
     /// [`show`]: crate::CommonMarkViewer::show
     #[doc(hidden)] // Buggy in scenarios more complex than the example application
     #[cfg(feature = "pulldown_cmark")]
-    pub fn show_scrollable(self, ui: &mut egui::Ui, cache: &mut CommonMarkCache, text: &str) {
+    pub fn show_scrollable(
+        self,
+        source_id: impl std::hash::Hash,
+        ui: &mut egui::Ui,
+        cache: &mut CommonMarkCache,
+        text: &str,
+    ) {
         egui_commonmark_backend::prepare_show(cache, ui.ctx());
-        parsers::pulldown::CommonMarkViewerInternal::new(self.source_id).show_scrollable(
+        parsers::pulldown::CommonMarkViewerInternal::new().show_scrollable(
+            Id::new(source_id),
             ui,
             cache,
             &self.options,
@@ -284,6 +265,7 @@ pub(crate) struct ListLevel {
 #[derive(Default)]
 pub(crate) struct List {
     items: Vec<ListLevel>,
+    has_list_begun: bool,
 }
 
 impl List {
@@ -304,9 +286,15 @@ impl List {
     }
 
     pub fn start_item(&mut self, ui: &mut egui::Ui, options: &CommonMarkOptions) {
+        // To ensure that newlines are only inserted within the list and not before it
+        if self.has_list_begun {
+            newline(ui);
+        } else {
+            self.has_list_begun = true;
+        }
+
         let len = self.items.len();
         if let Some(item) = self.items.last_mut() {
-            newline(ui);
             ui.label(" ".repeat((len - 1) * options.indentation_spaces));
 
             if let Some(number) = &mut item.current_number {
@@ -324,10 +312,10 @@ impl List {
         ui.add_space(4.0);
     }
 
-    pub fn end_level(&mut self, ui: &mut egui::Ui) {
+    pub fn end_level(&mut self, ui: &mut egui::Ui, insert_newline: bool) {
         self.items.pop();
 
-        if self.items.is_empty() {
+        if self.items.is_empty() && insert_newline {
             newline(ui);
         }
     }

@@ -50,7 +50,7 @@ impl App {
             egui::Frame::none()
                 .inner_margin(egui::Margin::symmetric(5.0, 0.0))
                 .show(ui, |ui| {
-                    CommonMarkViewer::new("viewer")
+                    CommonMarkViewer::new()
                         .default_width(Some(200))
                         .max_image_width(Some(512))
                         .show(
@@ -72,17 +72,12 @@ impl eframe::App for App {
     }
 }
 
-#[cfg(feature = "comrak")]
-const BACKEND: &str = "comrak";
-#[cfg(feature = "pulldown_cmark")]
-const BACKEND: &str = "pulldown_cmark";
-
 fn main() -> eframe::Result {
     let mut args = std::env::args();
     args.next();
 
     eframe::run_native(
-        &format!("Markdown viewer (backend '{}')", BACKEND),
+        "Markdown viewer",
         eframe::NativeOptions::default(),
         Box::new(move |cc| {
             if let Some(theme) = args.next() {
@@ -114,15 +109,19 @@ fn main() -> eframe::Result {
                         content: include_str!("markdown/lists.md").to_owned(),
                     },
                     Page {
+                        name: "Definition lists".to_owned(),
+                        content: include_str!("markdown/definition_list.md").to_owned(),
+                    },
+                    Page {
                         name: "Code blocks".to_owned(),
                         content: include_str!("markdown/code-blocks.md").to_owned(),
                     },
                     Page {
-                        name: "Block Quotes ".to_owned(),
+                        name: "Block Quotes".to_owned(),
                         content: include_str!("markdown/blockquotes.md").to_owned(),
                     },
                     Page {
-                        name: "Tables ".to_owned(),
+                        name: "Tables".to_owned(),
                         content: include_str!("markdown/tables.md").to_owned(),
                     },
                 ],

@@ -8,7 +8,6 @@ pub mod alerts;
 pub mod elements;
 #[doc(hidden)]
 pub mod misc;
-#[cfg(feature = "pulldown-cmark")]
 #[doc(hidden)]
 pub mod pulldown;
 
@@ -18,7 +17,7 @@ pub use {
     alerts::{alert_ui, Alert, AlertBundle},
     // Pretty much every single element in this module is used by the proc macros
     elements::*,
-    misc::{prepare_show, CommonMarkOptions, FencedCodeBlock, Image, Link},
+    misc::{prepare_show, CodeBlock, CommonMarkOptions, Image, Link},
 };
 
 // The only struct that is allowed to use directly. (If one does not need egui_commonmark)
