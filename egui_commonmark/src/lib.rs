@@ -96,6 +96,11 @@ impl CommonMarkViewer {
         Self::default()
     }
 
+    
+    pub fn selectable(mut self, selectable: bool) -> Self {
+        self
+    }
+    
     /// The amount of spaces a bullet point is indented. By default this is 4
     /// spaces.
     pub fn indentation_spaces(mut self, spaces: usize) -> Self {
